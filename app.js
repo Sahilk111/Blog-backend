@@ -2,6 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 var {v4 : uuidv4} = require('uuid');
+const mongoosePaginate = require('mongoose-paginate-v2');
+
 
 const cors = require('cors');
 const { json } = require("body-parser");
@@ -9,7 +11,7 @@ const app = express();
 
 app.use(cors({
     origin: '*',
-    methods: ['GET','POST','DELETE']
+    methods: ['GET','POST','DELETE','PATCH']
 }));
 
 
@@ -37,18 +39,34 @@ const articleSchema = new mongoose.Schema({
 
 })
 
+articleSchema.plugin(mongoosePaginate)
+
 const Article =  mongoose.model("Article",articleSchema);
+
 
 app.get("/home",function(req,res){
 
-    Article.find({},function(err,foundArticles){
-        if(!err){
-            res.status(200).json(foundArticles)
+    const options = {
+        page: req.query.page,
+        limit: req.query.limit,
+        collation: {
+          locale: 'en',
+        },
+      };
+
+       Article.paginate({}, options, function (err, result) {
+
+        if(err){
+            res.send(err)
         }else{
-            res.status(401).json(err)
+            res.send(result);
         }
-    })
-})
+
+      });
+    });
+
+
+
 
 app.post("/new/:author_id",function(req,res){
 
